@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+''' This file downloads wallpapers and sets a random wallpaper every time it runs '''
 
 
 import subprocess
 import os
 import sys
 
-import socwall
+from . import socwall
 
 
 APP_NAME = "wallpaper_manager"
@@ -13,7 +14,10 @@ VERBOSE = 1
 
 
 def set_wallpaper(file_path):
+    ''' Set the current wallpaper for all platforms'''
     desktop_env = get_desktop_env()
+    first_run = True   # TODO: not needed ?
+    args = ''
     try:
         if desktop_env in ["gnome", "unity", "cinnamon"]:
             uri = "'file://%s'" % file_path
@@ -44,18 +48,16 @@ def set_wallpaper(file_path):
             subprocess.Popen(args, shell=True)
         elif desktop_env == "xfce4":
             # From http://www.commandlinefu.com/commands/view/2055/change-wallpaper-for-xfce4-4.6.0
-            first_run = True
             if first_run:
-                args0 = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-path", "-s", file_path]
+                args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-path", "-s", file_path]
                 args1 = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-style", "-s", "3"]
                 args2 = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-show", "-s", "true"]
-                subprocess.Popen(args0)
+                subprocess.Popen(args)
                 subprocess.Popen(args1)
                 subprocess.Popen(args2)
             args = ["xfdesktop", "--reload"]
             subprocess.Popen(args)
         elif desktop_env == "razor-qt":  # TODO: implement reload of desktop when possible
-            first_run = True
             if first_run:
                 import configparser
                 desktop_conf = configparser.ConfigParser()
@@ -71,13 +73,10 @@ def set_wallpaper(file_path):
                     if desktop_conf.has_option("razor", config_option):  # only replacing a value
                         desktop_conf.set("razor", config_option, file_path)
                         import codecs
-                        with codecs.open(desktop_conf_file, "w", encoding="utf-8", errors="replace") as f:
-                            desktop_conf.write(f)
+                        with codecs.open(desktop_conf_file, "w", encoding="utf-8", errors="replace") as fhandler:
+                            desktop_conf.write(fhandler)
                 except:
                     pass
-            else:
-                # TODO: reload desktop when possible
-                pass
         elif desktop_env in ["fluxbox", "jwm", "openbox", "afterstep"]:
             # http://fluxbox-wiki.org/index.php/Howto_set_the_background
             # used fbsetbg on jwm too since I am too lazy to edit the XML configuration
@@ -106,14 +105,14 @@ def set_wallpaper(file_path):
             args = "wmsetbg -s -u %s" % file_path
             subprocess.Popen(args, shell=True)
         # NOT TESTED BELOW - don't want to mess things up ##
-        # elif desktop_env=="enlightenment": # I have not been able to make it work on e17. On e16 it would have been something in this direction
+        # elif desktop_env=="enlightenment": # I have not been able to make it work on e17.
+        # On e16 it would have been something in this direction
         #    args = "enlightenment_remote -desktop-bg-add 0 0 0 0 %s" % file_path
         #    subprocess.Popen(args,shell=True)
         elif desktop_env == "windows":  # Not tested since I do not run this on Windows
             # From http://stackoverflow.com/questions/1977694/change-desktop-background
             import ctypes
-            SPI_SETDESKWALLPAPER = 20
-            ctypes.windll.user32.SystemParametersInfoA(SPI_SETDESKWALLPAPER, 0, file_path, 0)
+            ctypes.windll.user32.SystemParametersInfoA(20, 0, file_path, 0)
         elif desktop_env == "mac":  # Not tested since I do not have a mac
             # From http://stackoverflow.com/questions/431205/how-can-i-programatically-change-the-background-in-mac-os-x
             cmd = "osascript -e 'tell application \"Finder\" to set desktop picture to POSIX file \"%s\"'" % file_path
@@ -130,7 +129,16 @@ def set_wallpaper(file_path):
         return False
 
 
+def get_wallpaper_dir():
+    ''' Images are saved in a visible folder for the user '''
+    wallpaper_dir = os.path.join(get_home_dir(), "Wallpapers")
+    if not os.path.exists(wallpaper_dir):
+        os.mkdir(wallpaper_dir)
+    return wallpaper_dir
+
+
 def get_config_dir(app_name=APP_NAME):
+    ''' Use XDG standard config '''
     if "XDG_CONFIG_HOME" in os.environ:
         confighome = os.environ['XDG_CONFIG_HOME']
     elif "APPDATA" in os.environ:  # On Windows
@@ -146,6 +154,7 @@ def get_config_dir(app_name=APP_NAME):
 
 
 def get_home_dir():
+    ''' Home dir for all platforms '''
     if sys.platform == "cygwin":
         home_dir = os.getenv('HOME')
     else:
@@ -157,9 +166,10 @@ def get_home_dir():
 
 
 def get_random_wallpaper():
+    ''' Returns a random image that has not been seen before '''
     import random
     import glob
-    wallpaper_dir = get_config_dir()
+    wallpaper_dir = get_wallpaper_dir()
     images = glob.glob(wallpaper_dir + "/*.jpg")
 
     seen_images = list()
@@ -184,6 +194,7 @@ def get_random_wallpaper():
 
 
 def get_desktop_env():
+    ''' Desktop environment for all platforms '''
     desktop_env = "unknown"
     if sys.platform in ["win32", "cygwin"]:
         desktop_env = "windows"
@@ -224,10 +235,11 @@ def get_desktop_env():
 
 
 def log_name():
-    dir = get_config_dir()
-    if not os.path.exists(dir):
-        os.mkdir(dir)
-    logname = dir + "/seenimages.log"
+    ''' Name of log file '''
+    ldir = get_config_dir()
+    if not os.path.exists(ldir):
+        os.mkdir(ldir)
+    logname = ldir + "/seenimages.log"
     if not os.path.exists(logname):
         with open(logname, "a+"):
             pass
@@ -235,19 +247,20 @@ def log_name():
 
 
 def log_image(image_path):
+    ''' Log an image that has been used '''
     with open(log_name(), "a+") as log:
         log.write(image_path + "\n")
 
 
 def is_running(process):
-    import subprocess
+    ''' True if process is running, string matching '''
     import re
     try:  # Linux/Unix
         sout = subprocess.Popen(["ps", "axw"], stdout=subprocess.PIPE)
     except:  # Windows
         sout = subprocess.Popen(["tasklist", "/v"], stdout=subprocess.PIPE)
-    for x in sout.stdout:
-        if re.search(process, x):
+    for proc in sout.stdout:
+        if re.search(process, proc):
             return True
     return False
 

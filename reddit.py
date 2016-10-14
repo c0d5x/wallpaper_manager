@@ -24,7 +24,7 @@ def download_img(img_name):
     if SOCWALL_VERBOSE:
         print("Downloading %s" % (SOCWALL_DOMAIN + imagepath))
     image = requests.get(SOCWALL_DOMAIN + imagepath, headers=HEADERS, stream=True)
-    with open(wm.get_wallpaper_dir() + "/socwall-" + image_id + ".jpg", 'wb+') as outf:
+    with open(wm.get_wallpaper_dir() + "/reddit-" + image_id + ".jpg", 'wb+') as outf:
         shutil.copyfileobj(image.raw, outf)
     del image
 
