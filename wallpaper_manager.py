@@ -9,6 +9,7 @@ import socwall
 
 
 APP_NAME = "wallpaper_manager"
+VERBOSE = 1
 
 
 def set_wallpaper(file_path):
@@ -115,8 +116,8 @@ def set_wallpaper(file_path):
             ctypes.windll.user32.SystemParametersInfoA(SPI_SETDESKWALLPAPER, 0, file_path, 0)
         elif desktop_env == "mac":  # Not tested since I do not have a mac
             # From http://stackoverflow.com/questions/431205/how-can-i-programatically-change-the-background-in-mac-os-x
-            defaults = "defaults write com.apple.desktop Background '{default = {ImageFilePath='%s';};}" % file_path
-            subprocess.Popen(defaults, shell=True)
+            cmd = "osascript -e 'tell application \"Finder\" to set desktop picture to POSIX file \"%s\"'" % file_path
+            subprocess.Popen(cmd, shell=True)
         else:
             if first_run:  # don't spam the user with the same message over and over again
                 sys.stderr.write("Warning: Failed to set wallpaper. Your desktop environment is not supported.")
@@ -169,7 +170,10 @@ def get_random_wallpaper():
     existing = len(images)
     seen = len(seen_images)
 
-    if seen >= (existing / 2):
+    # if seen >= (existing / 2):
+    if (existing - seen) < 10:
+        if VERBOSE:
+            print("Images %i/%i, getting new images" % (seen, existing))
         socwall.dl_random_page()
         images = glob.glob(wallpaper_dir + "/*.jpg")
 

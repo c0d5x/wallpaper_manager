@@ -7,6 +7,7 @@ import shutil
 from lxml import html
 import wallpaper_manager as wm
 
+SOCWALL_VERBOSE = True
 SOCWALL_DOMAIN = "http://www.socwall.com/"
 SOCWALL_MAX = 702
 HEADERS = {
@@ -20,6 +21,8 @@ def download_img(img_name):
     page = requests.get(img_url, headers=HEADERS)
     doctree = html.fromstring(page.content)
     imagepath = doctree.xpath("//a[@class='download']")[0].attrib['href']
+    if SOCWALL_VERBOSE:
+        print("Downloading %s" % (SOCWALL_DOMAIN + imagepath))
     image = requests.get(SOCWALL_DOMAIN + imagepath, headers=HEADERS, stream=True)
     with open(wm.get_config_dir() + "/" + image_id + ".jpg", 'wb+') as outf:
         shutil.copyfileobj(image.raw, outf)
