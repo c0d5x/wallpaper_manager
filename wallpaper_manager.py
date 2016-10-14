@@ -115,16 +115,8 @@ def set_wallpaper(file_path):
             ctypes.windll.user32.SystemParametersInfoA(SPI_SETDESKWALLPAPER, 0, file_path, 0)
         elif desktop_env == "mac":  # Not tested since I do not have a mac
             # From http://stackoverflow.com/questions/431205/how-can-i-programatically-change-the-background-in-mac-os-x
-            try:
-                from appscript import app, mactypes
-                app('Finder').desktop_picture.set(mactypes.File(file_path))
-            except ImportError:
-                SCRIPT = """/usr/bin/osascript<<END
-                tell application "Finder" to
-                set desktop picture to POSIX file "%s"
-                end tell
-                END"""
-                subprocess.Popen(SCRIPT % file_path, shell=True)
+            defaults = "defaults write com.apple.desktop Background '{default = {ImageFilePath='%s';};}" % file_path
+            subprocess.Popen(defaults, shell=True)
         else:
             if first_run:  # don't spam the user with the same message over and over again
                 sys.stderr.write("Warning: Failed to set wallpaper. Your desktop environment is not supported.")
@@ -170,14 +162,14 @@ def get_random_wallpaper():
     images = glob.glob(wallpaper_dir + "/*.jpg")
 
     seen_images = list()
-    with open(log_name()) as logf:
+    with open(log_name(), "r") as logf:
         seen_images = logf.readlines()
-    seen_images = [l.strip('\n') for l in seen_images]
+        seen_images = [l.strip('\n') for l in seen_images]
 
     existing = len(images)
     seen = len(seen_images)
 
-    if seen > (existing / 2):
+    if seen >= (existing / 2):
         socwall.dl_random_page()
         images = glob.glob(wallpaper_dir + "/*.jpg")
 
@@ -228,7 +220,14 @@ def get_desktop_env():
 
 
 def log_name():
-    return get_config_dir() + "/seenimages.log"
+    dir = get_config_dir()
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+    logname = dir + "/seenimages.log"
+    if not os.path.exists(logname):
+        with open(logname, "a+"):
+            pass
+    return logname
 
 
 def log_image(image_path):
