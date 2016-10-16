@@ -12,27 +12,30 @@ from . import socwall
 APP_NAME = "wallpaper_manager"
 VERBOSE = 1
 
+def set_wallpaper_gnomefamily(file_path):
+    ''' gnome, unity, cinnamon '''
+    uri = "'file://%s'" % file_path
+    try:
+        args = ["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri]
+        subprocess.Popen(args)
+    except subprocess.CalledProcessError:
+        args = ["dconf", "write", "/org/gnome/desktop/background/picture-uri", uri]
+        subprocess.Popen(args)
+
 
 def set_wallpaper(file_path):
     ''' Set the current wallpaper for all platforms'''
     desktop_env = get_desktop_env()
-    first_run = True   # TODO: not needed ?
-    args = ''
+    args = list()
     try:
         if desktop_env in ["gnome", "unity", "cinnamon"]:
-            uri = "'file://%s'" % file_path
-            try:
-                args = ["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri]
-                subprocess.Popen(args)
-            except:
-                args = ["dconf", "write", "/org/gnome/desktop/background/picture-uri", uri]
-                subprocess.Popen(args)
+            set_wallpaper_gnomefamily(file_path)
         elif desktop_env == "mate":
             try:  # MATE >= 1.6
                 # info from http://wiki.mate-desktop.org/docs:gsettings
                 args = ["gsettings", "set", "org.mate.background", "picture-filename", "'%s'" % file_path]
                 subprocess.Popen(args)
-            except:  # MATE < 1.6
+            except subprocess.CalledProcessError:
                 # From https://bugs.launchpad.net/variety/+bug/1033918
                 args = ["mateconftool-2", "-t", "string", "--set", "/desktop/mate/background/picture_filename", '"%s"' % file_path]
                 subprocess.Popen(args)
@@ -48,35 +51,30 @@ def set_wallpaper(file_path):
             subprocess.Popen(args, shell=True)
         elif desktop_env == "xfce4":
             # From http://www.commandlinefu.com/commands/view/2055/change-wallpaper-for-xfce4-4.6.0
-            if first_run:
-                args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-path", "-s", file_path]
-                args1 = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-style", "-s", "3"]
-                args2 = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-show", "-s", "true"]
-                subprocess.Popen(args)
-                subprocess.Popen(args1)
-                subprocess.Popen(args2)
+            args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-path", "-s", file_path]
+            subprocess.Popen(args)
+            args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-style", "-s", "3"]
+            subprocess.Popen(args)
+            args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-show", "-s", "true"]
+            subprocess.Popen(args)
             args = ["xfdesktop", "--reload"]
             subprocess.Popen(args)
         elif desktop_env == "razor-qt":  # TODO: implement reload of desktop when possible
-            if first_run:
-                import configparser
-                desktop_conf = configparser.ConfigParser()
-                # Development version
-                desktop_conf_file = os.path.join(get_config_dir("razor"), "desktop.conf")
-                if os.path.isfile(desktop_conf_file):
-                    config_option = r"screens\1\desktops\1\wallpaper"
-                else:
-                    desktop_conf_file = os.path.join(get_home_dir(), ".razor/desktop.conf")
-                    config_option = r"desktops\1\wallpaper"
-                desktop_conf.read(os.path.join(desktop_conf_file))
-                try:
-                    if desktop_conf.has_option("razor", config_option):  # only replacing a value
-                        desktop_conf.set("razor", config_option, file_path)
-                        import codecs
-                        with codecs.open(desktop_conf_file, "w", encoding="utf-8", errors="replace") as fhandler:
-                            desktop_conf.write(fhandler)
-                except:
-                    pass
+            import configparser
+            desktop_conf = configparser.ConfigParser()
+            # Development version
+            desktop_conf_file = os.path.join(get_config_dir("razor"), "desktop.conf")
+            if os.path.isfile(desktop_conf_file):
+                config_option = r"screens\1\desktops\1\wallpaper"
+            else:
+                desktop_conf_file = os.path.join(get_home_dir(), ".razor/desktop.conf")
+                config_option = r"desktops\1\wallpaper"
+            desktop_conf.read(os.path.join(desktop_conf_file))
+            if desktop_conf.has_option("razor", config_option):  # only replacing a value
+                desktop_conf.set("razor", config_option, file_path)
+                import codecs
+                with codecs.open(desktop_conf_file, "w", encoding="utf-8", errors="replace") as fhandler:
+                    desktop_conf.write(fhandler)
         elif desktop_env in ["fluxbox", "jwm", "openbox", "afterstep"]:
             # http://fluxbox-wiki.org/index.php/Howto_set_the_background
             # used fbsetbg on jwm too since I am too lazy to edit the XML configuration
@@ -86,7 +84,7 @@ def set_wallpaper(file_path):
             try:
                 args = ["fbsetbg", file_path]
                 subprocess.Popen(args)
-            except:
+            except subprocess.CalledProcessError:
                 sys.stderr.write("ERROR: Failed to set wallpaper with fbsetbg!\n")
                 sys.stderr.write("Please make sre that You have fbsetbg installed.\n")
         elif desktop_env == "icewm":
@@ -118,9 +116,8 @@ def set_wallpaper(file_path):
             cmd = "osascript -e 'tell application \"Finder\" to set desktop picture to POSIX file \"%s\"'" % file_path
             subprocess.Popen(cmd, shell=True)
         else:
-            if first_run:  # don't spam the user with the same message over and over again
-                sys.stderr.write("Warning: Failed to set wallpaper. Your desktop environment is not supported.")
-                sys.stderr.write("You can try manually to set Your wallpaper to %s" % file_path)
+            sys.stderr.write("Warning: Failed to set wallpaper. Your desktop environment is not supported.")
+            sys.stderr.write("You can try manually to set Your wallpaper to %s" % file_path)
             return False
         log_image(file_path)
         return True
@@ -150,6 +147,8 @@ def get_config_dir(app_name=APP_NAME):
         except ImportError:  # Most likely a Linux/Unix system anyway
             confighome = os.path.join(get_home_dir(), ".config")
     configdir = os.path.join(confighome, app_name)
+    if not os.path.exists(configdir):
+        os.mkdir(configdir)
     return configdir
 
 
@@ -205,7 +204,8 @@ def get_desktop_env():
         if desktop_session is not None:  # easier to match if we doesn't have to deal with caracter cases
             desktop_session = desktop_session.lower()
             if desktop_session in ["gnome", "unity", "cinnamon", "mate", "xfce4", "lxde", "fluxbox",
-                                   "blackbox", "openbox", "icewm", "jwm", "afterstep", "trinity", "kde"]:
+                                   "blackbox", "openbox", "icewm", "jwm", "afterstep", "trinity", "kde",
+                                   "awesome", "awesome-gnome", "i3", ]:
                 desktop_env = desktop_session
             # Special cases #
             # Canonical sets $DESKTOP_SESSION to Lubuntu rather than LXDE if using LXDE.
