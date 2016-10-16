@@ -5,7 +5,7 @@ import requests
 import random
 import shutil
 from lxml import html
-import wallpaper_manager as wm
+import wallpaper as wm
 
 SOCWALL_VERBOSE = True
 SOCWALL_DOMAIN = "http://www.socwall.com/"
@@ -29,7 +29,19 @@ def download_img(img_name):
     del image
 
 
+def dl_one():
+    ''' Get one image '''
+    num = random.randint(1, SOCWALL_MAX)
+    URL = SOCWALL_DOMAIN + "wallpapers/page:{}/".format(num)
+    source = requests.get(URL, headers=HEADERS)
+    doctree = html.fromstring(source.content)
+    images = doctree.xpath("//a[@class='image']")
+    aref = random.choice(images)
+    download_img(aref.attrib['href'])
+
+
 def dl_page(num):
+    ''' Download one page of imgs '''
     URL = SOCWALL_DOMAIN + "wallpapers/page:{}/".format(num)
     # print(URL)
     source = requests.get(URL, headers=HEADERS)
