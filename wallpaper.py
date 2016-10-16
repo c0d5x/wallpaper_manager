@@ -300,7 +300,7 @@ def is_running(process):
     except:  # Windows
         sout = subprocess.Popen(["tasklist", "/v"], stdout=subprocess.PIPE)
     for proc in sout.stdout:
-        if re.search(process, proc):
+        if re.search(process, str(proc)):
             return True
     return False
 
