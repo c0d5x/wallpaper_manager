@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 ''' Parse and download wallpapers from socwall.com '''
 
-import requests
-import random
 import shutil
+import random
+import requests
 from lxml import html
-import wallpaper as wm
 
 SOCWALL_VERBOSE = True
 SOCWALL_DOMAIN = "http://www.socwall.com/"
@@ -15,7 +14,8 @@ HEADERS = {
 }
 
 
-def download_img(img_name):
+def download_img(img_name, path):
+    ''' Download one specific image '''
     image_id = img_name.split('/')[2]
     img_url = SOCWALL_DOMAIN + "/desktop-wallpaper/{}/wallpaper/".format(image_id)
     page = requests.get(img_url, headers=HEADERS)
@@ -24,37 +24,38 @@ def download_img(img_name):
     if SOCWALL_VERBOSE:
         print("Downloading %s" % (SOCWALL_DOMAIN + imagepath))
     image = requests.get(SOCWALL_DOMAIN + imagepath, headers=HEADERS, stream=True)
-    with open(wm.get_wallpaper_dir() + "/socwall-" + image_id + ".jpg", 'wb+') as outf:
+    with open(path + "/socwall-" + image_id + ".jpg", 'wb+') as outf:
         shutil.copyfileobj(image.raw, outf)
     del image
 
 
-def dl_one():
+def dl_one(path):
     ''' Get one image '''
     num = random.randint(1, SOCWALL_MAX)
-    URL = SOCWALL_DOMAIN + "wallpapers/page:{}/".format(num)
-    source = requests.get(URL, headers=HEADERS)
+    url = SOCWALL_DOMAIN + "wallpapers/page:{}/".format(num)
+    source = requests.get(url, headers=HEADERS)
     doctree = html.fromstring(source.content)
     images = doctree.xpath("//a[@class='image']")
     aref = random.choice(images)
-    download_img(aref.attrib['href'])
+    download_img(aref.attrib['href'], path)
 
 
-def dl_page(num):
+def dl_page(num, path):
     ''' Download one page of imgs '''
-    URL = SOCWALL_DOMAIN + "wallpapers/page:{}/".format(num)
+    url = SOCWALL_DOMAIN + "wallpapers/page:{}/".format(num)
     # print(URL)
-    source = requests.get(URL, headers=HEADERS)
+    source = requests.get(url, headers=HEADERS)
     doctree = html.fromstring(source.content)
     images = doctree.xpath("//a[@class='image']")
     for aref in images:
         # print(aref.attrib['href'])
-        download_img(aref.attrib['href'])
+        download_img(aref.attrib['href'], path)
 
 
-def dl_random_page():
+def dl_random_page(path):
+    """ Download all images of a page at random """
     pagen = random.randint(1, SOCWALL_MAX)
-    dl_page(pagen)
+    dl_page(pagen, path)
 
-if __name__ == "__main__":
-    dl_random_page()
+# if __name__ == "__main__":
+#    dl_random_page()
