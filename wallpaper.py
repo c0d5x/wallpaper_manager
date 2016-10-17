@@ -7,6 +7,7 @@ import sys
 import glob
 import subprocess
 
+# pylint: disable=import-error
 import socwall
 import random
 
@@ -15,12 +16,17 @@ APP_NAME = "wallpaper_manager"
 VERBOSE = 1
 
 
+# pylint: disable=no-self-use
 class Wallpaper:
     """
     Set a nice and random wallpaper for your desktops
     """
 
     def __init__(self):
+        self.home_dir = self.get_home_dir()
+        self.config_dir = self.get_config_dir()
+        self.wallpaper_dir = self.get_wallpaper_dir()
+        self.desktop_env = self.get_desktop_env()
         if len(self.get_new_images()) < 1:
             self.dl_one_image()
 
@@ -43,7 +49,7 @@ class Wallpaper:
                 from xdg import BaseDirectory
                 confighome = BaseDirectory.xdg_config_home
             except ImportError:  # Most likely a Linux/Unix system anyway
-                confighome = os.path.join(self.get_home_dir(), ".config")
+                confighome = os.path.join(self.home_dir, ".config")
         configdir = os.path.join(confighome, app_name)
         if not os.path.exists(configdir):
             os.mkdir(configdir)
@@ -51,14 +57,14 @@ class Wallpaper:
 
     def get_wallpaper_dir(self):
         ''' Images are saved in a visible folder for the user '''
-        wallpaper_dir = os.path.join(self.get_home_dir(), "Wallpapers")
+        wallpaper_dir = os.path.join(self.home_dir, "Wallpapers")
         if not os.path.exists(wallpaper_dir):
             os.mkdir(wallpaper_dir)
         return wallpaper_dir
 
     def logfile_name(self):
         ''' Name of log file '''
-        ldir = self.get_config_dir()
+        ldir = self.config_dir
         if not os.path.exists(ldir):
             os.mkdir(ldir)
         logname = ldir + "/used_images.log"
@@ -105,7 +111,7 @@ class Wallpaper:
         if os.path.isfile(desktop_conf_file):
             config_option = r"screens\1\desktops\1\wallpaper"
         else:
-            desktop_conf_file = os.path.join(self.get_home_dir(), ".razor/desktop.conf")
+            desktop_conf_file = os.path.join(self.home_dir, ".razor/desktop.conf")
             config_option = r"desktops\1\wallpaper"
         desktop_conf.read(os.path.join(desktop_conf_file))
         if desktop_conf.has_option("razor", config_option):  # only replacing a value
@@ -137,9 +143,10 @@ class Wallpaper:
         args = ["feh", "--bg-center", file_path]
         subprocess.Popen(args)
 
+    # pylint: disable=too-many-branches
     def set_wallpaper(self, file_path):
         ''' Set the current wallpaper for all platforms'''
-        desktop_env = self.get_desktop_env()
+        desktop_env = self.desktop_env
         args = list()
         try:
             if desktop_env in ["gnome", "unity", "cinnamon", "awesome-gnome"]:
@@ -197,7 +204,7 @@ class Wallpaper:
         Cycle thru image providers, downloading from each
         """
         if path == '':
-            path = self.get_wallpaper_dir()
+            path = self.wallpaper_dir
         socwall.dl_random_page(path)
 
     def get_new_images(self):
@@ -207,7 +214,7 @@ class Wallpaper:
             used_images = logf.readlines()
             used_images = [l.strip('\n') for l in used_images]
 
-        wallpaper_dir = self.get_wallpaper_dir()
+        wallpaper_dir = self.wallpaper_dir
         images = glob.glob(wallpaper_dir + "/*.jpg")
 
         return [img for img in images if img not in used_images]
@@ -225,7 +232,7 @@ class Wallpaper:
     def dl_one_image(self, path=''):
         ''' Get one image fast '''
         if path == '':
-            path = self.get_wallpaper_dir()
+            path = self.wallpaper_dir
         socwall.dl_one(path)
 
     def get_desktop_env(self):
