@@ -103,23 +103,6 @@ class Wallpaper:
             args = ["mateconftool-2", "-t", "string", "--set", "/desktop/mate/background/picture_filename", '"%s"' % file_path]
             subprocess.Popen(args)
 
-    def set_wallpapper_razor_qt(self, file_path):  # TODO: implement reload of desktop when possible
-        ''' razor qt, not tested '''
-        import configparser
-        desktop_conf = configparser.ConfigParser()
-        desktop_conf_file = os.path.join(self.get_config_dir("razor"), "desktop.conf")
-        if os.path.isfile(desktop_conf_file):
-            config_option = r"screens\1\desktops\1\wallpaper"
-        else:
-            desktop_conf_file = os.path.join(self.home_dir, ".razor/desktop.conf")
-            config_option = r"desktops\1\wallpaper"
-        desktop_conf.read(os.path.join(desktop_conf_file))
-        if desktop_conf.has_option("razor", config_option):  # only replacing a value
-            desktop_conf.set("razor", config_option, file_path)
-            import codecs
-            with codecs.open(desktop_conf_file, "w", encoding="utf-8", errors="replace") as fhandler:
-                desktop_conf.write(fhandler)
-
     def set_wallpaper_xfce4(self, file_path):
         ''' not tested '''
         # From http://www.commandlinefu.com/commands/view/2055/change-wallpaper-for-xfce4-4.6.0
@@ -167,8 +150,6 @@ class Wallpaper:
                 subprocess.Popen(args, shell=True)
             elif desktop_env == "xfce4":
                 self.set_wallpaper_xfce4(file_path)
-            elif desktop_env == "razor-qt":
-                self.set_wallpapper_razor_qt(file_path)
             elif desktop_env in ["fluxbox", "jwm", "openbox", "afterstep"]:
                 args = ["fbsetbg", file_path]
                 subprocess.Popen(args)
@@ -261,8 +242,6 @@ class Wallpaper:
                     desktop_env = "lxde"
                 elif desktop_session.startswith("kubuntu"):
                     desktop_env = "kde"
-                elif desktop_session.startswith("razor"):  # e.g. razorkwin
-                    desktop_env = "razor-qt"
                 elif desktop_session.startswith("wmaker"):  # e.g. wmaker-common
                     desktop_env = "windowmaker"
             elif os.environ.get('KDE_FULL_SESSION') == 'true':
