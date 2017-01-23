@@ -3,12 +3,14 @@
 
 import shutil
 import random
+from concurrent import futures
 import requests
 from lxml import html
 
 SOCWALL_VERBOSE = True
 SOCWALL_DOMAIN = "http://www.socwall.com/"
 SOCWALL_MAX = 702
+SOCWALL_EXECUTORS = 100
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"
 }
@@ -47,9 +49,11 @@ def dl_page(num, path):
     source = requests.get(url, headers=HEADERS)
     doctree = html.fromstring(source.content)
     images = doctree.xpath("//a[@class='image']")
-    for aref in images:
-        # print(aref.attrib['href'])
-        download_img(aref.attrib['href'], path)
+
+    with futures.ThreadPoolExecutor(SOCWALL_EXECUTORS) as executor:
+        for aref in images:
+            # print(aref.attrib['href'])
+            executor.submit(download_img, aref.attrib['href'], path)
 
 
 def dl_random_page(path):
