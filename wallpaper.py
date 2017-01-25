@@ -275,4 +275,6 @@ class Wallpaper:
 
 if __name__ == '__main__':
     WM = Wallpaper()
+    # todo: consider if we have enough images
+    WM.download_images()
     WM.set_wallpaper(WM.get_random_wallpaper())
