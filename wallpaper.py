@@ -126,6 +126,24 @@ class Wallpaper:
         args = ["feh", "--bg-center", file_path]
         subprocess.Popen(args)
 
+    def osx_set_wallpaper(self, file_path):
+        """ osx all dirs """
+        try:
+            from appscript import app
+            from appscript import mactypes
+            from appscript import its
+        except:
+            raise
+        sys_events = app('System Events')
+        # desktops = sys_events.desktops.display_name.get()
+        # for desktop in desktops:
+        #    desk = sys_events.desktops[desktop]
+        #    desk.picture.set(mactypes.File(file_path))
+        desktops = sys_events.desktops.display_name.get()
+        for desktop in desktops:
+            desk = sys_events.desktops[its.display_name == desktop]
+            desk.picture.set(mactypes.File(file_path))
+
     # pylint: disable=too-many-branches
     def set_wallpaper(self, file_path):
         ''' Set the current wallpaper for all platforms'''
@@ -136,8 +154,9 @@ class Wallpaper:
                 self.set_wallpaper_gnomefamily(file_path)
             elif desktop_env == "mac":  # Not tested since I do not have a mac
                 # From http://stackoverflow.com/questions/431205/how-can-i-programatically-change-the-background-in-mac-os-x
-                cmd = "osascript -e 'tell application \"Finder\" to set desktop picture to POSIX file \"%s\"'" % file_path
-                subprocess.Popen(cmd, shell=True)
+                # cmd = "osascript -e 'tell application \"Finder\" to set desktop picture to POSIX file \"%s\"'" % file_path
+                # subprocess.Popen(cmd, shell=True)
+                self.osx_set_wallpaper(file_path)
             elif desktop_env == "windows":  # Not tested since I do not run this on Windows
                 self.set_wallpaper_windows(file_path)
             elif desktop_env == "mate":
