@@ -291,9 +291,15 @@ class Wallpaper:
                 return True
         return False
 
+    def enough_provisioned(self):
+        """ check if enough pics are there already """
+        if len(self.get_new_images()) > 50:
+            return True
+        return False
 
 if __name__ == '__main__':
     WM = Wallpaper()
     # todo: consider if we have enough images
-    WM.download_images()
+    if not WM.enough_provisioned():
+        WM.download_images()
     WM.set_wallpaper(WM.get_random_wallpaper())
