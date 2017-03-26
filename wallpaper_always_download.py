@@ -293,8 +293,8 @@ class Wallpaper:
 
     def enough_provisioned(self):
         """ check if enough pics are there already """
-        if len(self.get_new_images()) > 500:
-            return True
+#        if len(self.get_new_images()) > 50:
+#            return True
         return False
 
 if __name__ == '__main__':
