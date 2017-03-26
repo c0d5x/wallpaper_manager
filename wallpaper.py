@@ -187,8 +187,11 @@ class Wallpaper:
                 # From http://www.commandlinefu.com/commands/view/3857/set-wallpaper-on-windowmaker-in-one-line
                 args = "wmsetbg -s -u %s" % file_path
                 subprocess.Popen(args, shell=True)
-            else:
+            elif desktop_env == "i3":
                 self.set_wallpaper_feh(file_path)
+            else:
+                # default, deskenv not found
+                print("Desktop env not found", file=sys.stderr)
         except:
             self.set_wallpaper_feh(file_path)
 
@@ -242,13 +245,15 @@ class Wallpaper:
             desktop_env = "windows"
         elif sys.platform == "darwin":
             desktop_env = "mac"
-        else:  # linux/unix
+        elif sys.platform.startswith("linux"):
             desktop_session = os.environ.get('DESKTOP_SESSION')
             if desktop_session is not None:  # easier to match if we doesn't have to deal with caracter cases
                 desktop_session = desktop_session.lower()
-                if desktop_session in ["gnome", "unity", "cinnamon", "mate", "xfce4", "lxde", "fluxbox",
+                if desktop_session.startswith("i3"):
+                    desktop_env = "i3"
+                elif desktop_session in ["gnome", "unity", "cinnamon", "mate", "xfce4", "lxde", "fluxbox",
                                        "blackbox", "openbox", "icewm", "jwm", "afterstep", "trinity", "kde",
-                                       "awesome", "awesome-gnome", "i3", ]:
+                                       "awesome", "awesome-gnome" ]:
                     desktop_env = desktop_session
                 # Special cases #
                 # Canonical sets $DESKTOP_SESSION to Lubuntu rather than LXDE if using LXDE.
