@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 ''' Parse and download wallpapers from socwall.com '''
 
+import glob
 import shutil
 import random
 from concurrent import futures
@@ -15,6 +16,9 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"
 }
 
+
+
+# TODO: implement class
 
 def download_img(img_name, path):
     ''' Download one specific image '''
@@ -59,7 +63,21 @@ def dl_page(num, path):
 def dl_random_page(path):
     """ Download all images of a page at random """
     pagen = random.randint(1, SOCWALL_MAX)
+    page_numbers = []
+    with open(path+"/.page_numbers","r") as logf:
+        page_numbers = map(lambda s: s.strip(), logf.readlines())
+
+    for p in page_numbers:
+        print(p)
+
+    while pagen in page_numbers:
+        pagen = random.randint(1, SOCWALL_MAX)
+
     dl_page(pagen, path)
+
+    with open(path + "/.page_numbers", "a+") as logf:
+        logf.write(str(pagen) + "\n")
+
 
 # if __name__ == "__main__":
 #    dl_random_page()
