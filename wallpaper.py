@@ -15,6 +15,10 @@ import random
 APP_NAME = "wallpaper_manager"
 VERBOSE = 1
 
+# TODO: change seen by downloaded, don't download twice
+# TODO: lint
+# TODO: change OS settings to change the wallpaper from the folder
+
 
 # pylint: disable=no-self-use
 class Wallpaper:
