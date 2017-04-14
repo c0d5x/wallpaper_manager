@@ -6,8 +6,6 @@ import os
 import sys
 import glob
 import subprocess
-
-# pylint: disable=import-error
 import socwall
 import random
 
@@ -20,11 +18,14 @@ VERBOSE = 1
 # TODO: change OS settings to change the wallpaper from the folder
 
 
-# pylint: disable=no-self-use
-class Wallpaper:
+class Wallpaper(object):
     """
     Set a nice and random wallpaper for your desktops
     """
+
+    gallery_size = 200
+    # pool of images to keep locally
+    # TODO: image rotation
 
     def __init__(self):
         self.home_dir = self.get_home_dir()
@@ -148,7 +149,10 @@ class Wallpaper:
             desk = sys_events.desktops[its.display_name == desktop]
             desk.picture.set(mactypes.File(file_path))
 
-    # pylint: disable=too-many-branches
+        # another way can be:
+        # tell application "System Events" to set picture of every desktop to "~/Wallpapers/<path>"
+
+
     def set_wallpaper(self, file_path):
         ''' Set the current wallpaper for all platforms'''
         desktop_env = self.desktop_env
@@ -195,7 +199,8 @@ class Wallpaper:
                 self.set_wallpaper_feh(file_path)
             else:
                 # default, deskenv not found
-                print("Desktop env not found", file=sys.stderr)
+                # pylint: disable=superfluous-parens
+                print("Desktop env not found")
         except:
             self.set_wallpaper_feh(file_path)
 
@@ -240,7 +245,7 @@ class Wallpaper:
         ''' Get one image fast '''
         if path == '':
             path = self.wallpaper_dir
-        socwall.dl_one(path)
+        return socwall.dl_one(path)
 
     def get_desktop_env(self):
         ''' Desktop environment for all platforms '''
@@ -256,8 +261,8 @@ class Wallpaper:
                 if desktop_session.startswith("i3"):
                     desktop_env = "i3"
                 elif desktop_session in ["gnome", "unity", "cinnamon", "mate", "xfce4", "lxde", "fluxbox",
-                                       "blackbox", "openbox", "icewm", "jwm", "afterstep", "trinity", "kde",
-                                       "awesome", "awesome-gnome" ]:
+                                         "blackbox", "openbox", "icewm", "jwm", "afterstep", "trinity", "kde",
+                                         "awesome", "awesome-gnome"]:
                     desktop_env = desktop_session
                 # Special cases #
                 # Canonical sets $DESKTOP_SESSION to Lubuntu rather than LXDE if using LXDE.
@@ -302,13 +307,13 @@ class Wallpaper:
 
     def enough_provisioned(self):
         """ check if enough pics are there already """
-        if len(self.get_new_images()) > 500:
+        if len(self.get_new_images()) > self.gallery_size:
             return True
         return False
 
 if __name__ == '__main__':
     WM = Wallpaper()
     # todo: consider if we have enough images
-    if not WM.enough_provisioned():
-        WM.download_images()
+    # if not WM.enough_provisioned():
+    #    WM.download_images()
     WM.set_wallpaper(WM.get_random_wallpaper())

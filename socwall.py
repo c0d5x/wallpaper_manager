@@ -30,9 +30,11 @@ def download_img(img_name, path):
     if SOCWALL_VERBOSE:
         print("Downloading %s" % (SOCWALL_DOMAIN + imagepath))
     image = requests.get(SOCWALL_DOMAIN + imagepath, headers=HEADERS, stream=True)
-    with open(path + "/socwall-" + image_id + ".jpg", 'wb+') as outf:
+    new_image_path = path + "/socwall-" + image_id + ".jpg"
+    with open(new_image_path, 'wb+') as outf:
         shutil.copyfileobj(image.raw, outf)
     del image
+    return new_image_path
 
 
 def dl_one(path):
@@ -43,7 +45,7 @@ def dl_one(path):
     doctree = html.fromstring(source.content)
     images = doctree.xpath("//a[@class='image']")
     aref = random.choice(images)
-    download_img(aref.attrib['href'], path)
+    return download_img(aref.attrib['href'], path)
 
 
 def dl_page(num, path):
