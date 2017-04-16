@@ -156,6 +156,6 @@ if __name__ == '__main__':
     # todo: consider if we have enough images
     # if not WM.enough_provisioned():
     #    WM.download_images()
-    # WM.set_wallpaper(WM.get_random_wallpaper())
+    WM.set_wallpaper(WM.get_random_wallpaper())
     num_newimages = WM.download_images()
     WM.remove_oldest(num_newimages)
