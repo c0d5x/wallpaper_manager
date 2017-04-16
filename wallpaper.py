@@ -79,10 +79,15 @@ class Wallpaper(object):
     def set_wallpaper(self, file_path):
         ''' Set the current wallpaper for all platforms'''
         desktop_env = self.desktop_env
+
+        if desktop_env == 'unknown':
+            print('Could not detect desktop environment')
+            return
+
         try:
             utils.WMS[desktop_env](file_path)
         except:
-            print("Unexpected error:", sys.exc_info()[0])
+            print("Unexpected error setting wallpaper for {}:".format(desktop_env), sys.exc_info()[0])
 
         self.save_used_image(file_path)
 

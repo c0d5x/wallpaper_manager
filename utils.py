@@ -148,6 +148,7 @@ def get_desktop_env():
 
 def get_desktop_env_linux():
     '''penguin'''
+    desktop_env = 'unknown'
     desktop_session = os.environ.get('DESKTOP_SESSION')
     if desktop_session is not None:  # easier to match if we doesn't have to deal with caracter cases
         desktop_env = get_desktop_env_linux_session(desktop_session)
@@ -165,6 +166,7 @@ def get_desktop_env_linux():
 
 def get_desktop_env_linux_session(desktop_session):
     '''parse desktop session'''
+    desktop_env = 'unknown'
     desktop_session = desktop_session.lower()
     if desktop_session.startswith("i3"):
         desktop_env = "i3"
