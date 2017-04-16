@@ -5,9 +5,10 @@
 import os
 import sys
 import glob
+import random
 import subprocess
 import socwall
-import random
+import utils
 
 
 APP_NAME = "wallpaper_manager"
@@ -15,7 +16,7 @@ VERBOSE = 1
 
 # TODO: change seen by downloaded, don't download twice
 # TODO: lint
-# TODO: change OS settings to change the wallpaper from the folder
+# TODO: OS changes. Set folder for wallpapers and time period
 
 
 class Wallpaper(object):
@@ -24,27 +25,24 @@ class Wallpaper(object):
     """
 
     gallery_size = 200
+    home_dir = ""
+    config_dir = ""
+    wallpaper_dir = ""
+    desktop_env = ""
+
     # pool of images to keep locally
     # TODO: image rotation
 
     def __init__(self):
-        self.home_dir = self.get_home_dir()
+        self.home_dir = utils.get_home_dir()
         self.config_dir = self.get_config_dir()
         self.wallpaper_dir = self.get_wallpaper_dir()
-        self.desktop_env = self.get_desktop_env()
+        self.desktop_env = utils.get_desktop_env()
         if len(self.get_new_images()) < 1:
             self.dl_one_image()
 
-    def get_home_dir(self):
-        ''' Home dir for all platforms '''
-        home_dir = os.getenv('USERPROFILE') or os.getenv('HOME')
-        if home_dir is not None:
-            return os.path.normpath(home_dir)
-        else:
-            raise KeyError("Neither HOME or USERPROFILE environment variables set.")
-
     def get_config_dir(self, app_name=APP_NAME):
-        ''' Use XDG standard config '''
+        ''' Use XDG standard config, THIS METHOD HAS TO BE CALLED AFTER get_home_dir '''
         if "XDG_CONFIG_HOME" in os.environ:
             confighome = os.environ['XDG_CONFIG_HOME']
         elif "APPDATA" in os.environ:  # On Windows
@@ -78,131 +76,13 @@ class Wallpaper(object):
                 pass
         return logname
 
-    def set_wallpaper_gnomefamily(self, file_path):
-        ''' gnome, unity, cinnamon, awesome-gnome '''
-        uri = "'file://%s'" % file_path
-        try:
-            args = ["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri]
-            subprocess.Popen(args)
-        except subprocess.CalledProcessError:
-            args = ["dconf", "write", "/org/gnome/desktop/background/picture-uri", uri]
-            subprocess.Popen(args)
-
-    def set_wallpaper_gnome2(self, file_path):
-        ''' gnome2 uses gconftool-2 '''
-        # From https://bugs.launchpad.net/variety/+bug/1033918
-        try:
-            args = ["gconftool-2", "-t", "string", "--set", "/desktop/gnome/background/picture_filename", '"%s"' % file_path]
-            subprocess.Popen(args)
-        except subprocess.CalledProcessError:
-            self.set_wallpaper_gnomefamily(file_path)
-
-    def set_wallpaper_mate(self, file_path):
-        ''' mate wm '''
-        try:  # MATE >= 1.6
-            # info from http://wiki.mate-desktop.org/docs:gsettings
-            args = ["gsettings", "set", "org.mate.background", "picture-filename", "'%s'" % file_path]
-            subprocess.Popen(args)
-        except subprocess.CalledProcessError:
-            # From https://bugs.launchpad.net/variety/+bug/1033918
-            args = ["mateconftool-2", "-t", "string", "--set", "/desktop/mate/background/picture_filename", '"%s"' % file_path]
-            subprocess.Popen(args)
-
-    def set_wallpaper_xfce4(self, file_path):
-        ''' not tested '''
-        # From http://www.commandlinefu.com/commands/view/2055/change-wallpaper-for-xfce4-4.6.0
-        args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-path", "-s", file_path]
-        subprocess.Popen(args)
-        args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-style", "-s", "3"]
-        subprocess.Popen(args)
-        args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-show", "-s", "true"]
-        subprocess.Popen(args)
-        args = ["xfdesktop", "--reload"]
-        subprocess.Popen(args)
-
-    def set_wallpaper_windows(self, file_path):
-        ''' not tested '''
-        # From http://stackoverflow.com/questions/1977694/change-desktop-background
-        import ctypes
-        ctypes.windll.user32.SystemParametersInfoA(20, 0, file_path, 0)
-
-    def set_wallpaper_feh(self, file_path):
-        ''' not tested '''
-        args = ["feh", "--bg-center", file_path]
-        subprocess.Popen(args)
-
-    def osx_set_wallpaper(self, file_path):
-        """ osx all dirs """
-        try:
-            from appscript import app
-            from appscript import mactypes
-            from appscript import its
-        except:
-            raise
-        sys_events = app('System Events')
-        # desktops = sys_events.desktops.display_name.get()
-        # for desktop in desktops:
-        #    desk = sys_events.desktops[desktop]
-        #    desk.picture.set(mactypes.File(file_path))
-        desktops = sys_events.desktops.display_name.get()
-        for desktop in desktops:
-            desk = sys_events.desktops[its.display_name == desktop]
-            desk.picture.set(mactypes.File(file_path))
-
-        # another way can be:
-        # tell application "System Events" to set picture of every desktop to "~/Wallpapers/<path>"
-
-
     def set_wallpaper(self, file_path):
         ''' Set the current wallpaper for all platforms'''
         desktop_env = self.desktop_env
-        args = list()
         try:
-            if desktop_env in ["gnome", "unity", "cinnamon", "awesome-gnome"]:
-                self.set_wallpaper_gnomefamily(file_path)
-            elif desktop_env == "mac":  # Not tested since I do not have a mac
-                # From http://stackoverflow.com/questions/431205/how-can-i-programatically-change-the-background-in-mac-os-x
-                # cmd = "osascript -e 'tell application \"Finder\" to set desktop picture to POSIX file \"%s\"'" % file_path
-                # subprocess.Popen(cmd, shell=True)
-                self.osx_set_wallpaper(file_path)
-            elif desktop_env == "windows":  # Not tested since I do not run this on Windows
-                self.set_wallpaper_windows(file_path)
-            elif desktop_env == "mate":
-                self.set_wallpaper_mate(file_path)
-            elif desktop_env == "gnome2":  # Not tested
-                self.set_wallpaper_gnome2(file_path)
-            elif desktop_env in ["kde3", "trinity"]:
-                # From http://ubuntuforums.org/archive/index.php/t-803417.html
-                args = 'dcop kdesktop KBackgroundIface setWallpaper 0 "%s" 6' % file_path
-                subprocess.Popen(args, shell=True)
-            elif desktop_env == "xfce4":
-                self.set_wallpaper_xfce4(file_path)
-            elif desktop_env in ["fluxbox", "jwm", "openbox", "afterstep"]:
-                args = ["fbsetbg", file_path]
-                subprocess.Popen(args)
-            elif desktop_env == "icewm":
-                # command found at http://urukrama.wordpress.com/2007/12/05/desktop-backgrounds-in-window-managers/
-                args = ["icewmbg", file_path]
-                subprocess.Popen(args)
-            elif desktop_env == "blackbox":
-                # command found at http://blackboxwm.sourceforge.net/BlackboxDocumentation/BlackboxBackground
-                args = ["bsetbg", "-full", file_path]
-                subprocess.Popen(args)
-            elif desktop_env == "lxde":
-                args = "pcmanfm --set-wallpaper %s --wallpaper-mode=scaled" % file_path
-                subprocess.Popen(args, shell=True)
-            elif desktop_env == "windowmaker":
-                # From http://www.commandlinefu.com/commands/view/3857/set-wallpaper-on-windowmaker-in-one-line
-                args = "wmsetbg -s -u %s" % file_path
-                subprocess.Popen(args, shell=True)
-            elif desktop_env == "i3":
-                self.set_wallpaper_feh(file_path)
-            else:
-                # default, deskenv not found
-                # pylint: disable=superfluous-parens
-                print("Desktop env not found")
+            utils.WMS[desktop_env](file_path)
         except:
-            self.set_wallpaper_feh(file_path)
+            print("Unexpected error:", sys.exc_info()[0])
 
         self.save_used_image(file_path)
 
@@ -213,11 +93,11 @@ class Wallpaper(object):
 
     def download_images(self, path=''):
         """
-        Cycle thru image providers, downloading from each
+        TODO: Cycle thru image providers, downloading from each
         """
         if path == '':
             path = self.wallpaper_dir
-        socwall.dl_random_page(path)
+        return socwall.dl_random_page(path)
 
     def get_new_images(self):
         ''' Return a list of img options to choose from '''
@@ -247,73 +127,30 @@ class Wallpaper(object):
             path = self.wallpaper_dir
         return socwall.dl_one(path)
 
-    def get_desktop_env(self):
-        ''' Desktop environment for all platforms '''
-        desktop_env = "unknown"
-        if sys.platform in ["win32", "cygwin"]:
-            desktop_env = "windows"
-        elif sys.platform == "darwin":
-            desktop_env = "mac"
-        elif sys.platform.startswith("linux"):
-            desktop_session = os.environ.get('DESKTOP_SESSION')
-            if desktop_session is not None:  # easier to match if we doesn't have to deal with caracter cases
-                desktop_session = desktop_session.lower()
-                if desktop_session.startswith("i3"):
-                    desktop_env = "i3"
-                elif desktop_session in ["gnome", "unity", "cinnamon", "mate", "xfce4", "lxde", "fluxbox",
-                                         "blackbox", "openbox", "icewm", "jwm", "afterstep", "trinity", "kde",
-                                         "awesome", "awesome-gnome"]:
-                    desktop_env = desktop_session
-                # Special cases #
-                # Canonical sets $DESKTOP_SESSION to Lubuntu rather than LXDE if using LXDE.
-                # There is no guarantee that they will not do the same with the other desktop environments.
-                elif "xfce" in desktop_session or desktop_session.startswith("xubuntu"):
-                    desktop_env = "xfce4"
-                elif desktop_session.startswith("ubuntu"):
-                    desktop_env = "unity"
-                elif desktop_session.startswith("lubuntu"):
-                    desktop_env = "lxde"
-                elif desktop_session.startswith("kubuntu"):
-                    desktop_env = "kde"
-                elif desktop_session.startswith("wmaker"):  # e.g. wmaker-common
-                    desktop_env = "windowmaker"
-            elif os.environ.get('KDE_FULL_SESSION') == 'true':
-                desktop_env = "kde"
-            elif os.environ.get('GNOME_DESKTOP_SESSION_ID'):
-                if "deprecated" not in os.environ.get('GNOME_DESKTOP_SESSION_ID'):
-                    desktop_env = "gnome2"
-            elif self.is_running("xfce-mcs-manage"):
-                desktop_env = "xfce4"
-            elif self.is_running("ksmserver"):
-                desktop_env = "kde"
-        return desktop_env
-
     def save_used_image(self, image_path):
         ''' Log an image that has been used '''
         with open(self.logfile_name(), "a+") as log:
             log.write(image_path + "\n")
 
-    def is_running(self, process):
-        ''' True if process is running, string matching '''
-        import re
-        try:  # Linux/Unix
-            sout = subprocess.Popen(["ps", "axw"], stdout=subprocess.PIPE)
-        except:  # Windows
-            sout = subprocess.Popen(["tasklist", "/v"], stdout=subprocess.PIPE)
-        for proc in sout.stdout:
-            if re.search(process, str(proc)):
-                return True
-        return False
-
     def enough_provisioned(self):
         """ check if enough pics are there already """
-        if len(self.get_new_images()) > self.gallery_size:
-            return True
-        return False
+        return len(self.get_new_images()) > self.gallery_size
+
+    def remove_oldest(self, num):
+        """ remove a number of images """
+        # TODO: what to do in windows ?
+        fnbytes = subprocess.check_output("/bin/ls -tr {}|head -n {}".format(self.wallpaper_dir, num), shell=True)
+        fnstr = fnbytes.decode()
+        for filepath in [fn for fn in fnstr.split('\n') if fn != '']:
+            os.remove(self.wallpaper_dir + "/" + filepath)
+            print("Removed: {}".format(filepath))
+
 
 if __name__ == '__main__':
     WM = Wallpaper()
     # todo: consider if we have enough images
     # if not WM.enough_provisioned():
     #    WM.download_images()
-    WM.set_wallpaper(WM.get_random_wallpaper())
+    # WM.set_wallpaper(WM.get_random_wallpaper())
+    num_newimages = WM.download_images()
+    WM.remove_oldest(num_newimages)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 ''' Parse and download wallpapers from socwall.com '''
 
-import glob
+import os
 import shutil
 import random
 from concurrent import futures
@@ -15,7 +15,6 @@ SOCWALL_EXECUTORS = 100
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"
 }
-
 
 
 # TODO: implement class
@@ -56,29 +55,40 @@ def dl_page(num, path):
     doctree = html.fromstring(source.content)
     images = doctree.xpath("//a[@class='image']")
 
+    counter = 0
+
     with futures.ThreadPoolExecutor(SOCWALL_EXECUTORS) as executor:
         for aref in images:
             # print(aref.attrib['href'])
             executor.submit(download_img, aref.attrib['href'], path)
+            counter += 1
+    return counter
 
 
 def dl_random_page(path):
     """ Download all images of a page at random """
     pagen = random.randint(1, SOCWALL_MAX)
     page_numbers = []
-    with open(path+"/.page_numbers","r") as logf:
-        page_numbers = map(lambda s: s.strip(), logf.readlines())
 
-    for p in page_numbers:
-        print(p)
+    # load page numbers that have been downloaded
+    with open(path + "/.page_numbers", "r") as logf:
+        # page_numbers = map(lambda s: s.strip(), logf.readlines())
+        page_numbers = [s.strip() for s in logf.readlines()]
+
+    # check if we have exausted half of the library
+    if len(page_numbers) > (SOCWALL_MAX * 0.9):
+        os.remove(path + "/.page_numbers")  # start over
+        page_numbers = []
 
     while pagen in page_numbers:
         pagen = random.randint(1, SOCWALL_MAX)
 
-    dl_page(pagen, path)
+    num_images = dl_page(pagen, path)
 
     with open(path + "/.page_numbers", "a+") as logf:
         logf.write(str(pagen) + "\n")
+
+    return num_images
 
 
 # if __name__ == "__main__":
