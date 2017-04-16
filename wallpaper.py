@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 ''' This file downloads wallpapers and sets a random wallpaper every time it runs '''
 
+from __future__ import print_function
 
 import os
 import sys
@@ -8,8 +9,10 @@ import glob
 import random
 import subprocess
 
-import socwall  # pylint: disable-msg=W0401,W0403
-import utils    # pylint: disable-msg=W0401,W0403
+
+# pylint: disable-msg=W0401,W0403
+import socwall
+import utils
 
 # pylint: disable-msg=C0325
 
@@ -17,7 +20,6 @@ APP_NAME = "wallpaper_manager"
 VERBOSE = 1
 
 # TODO: change seen by downloaded, don't download twice
-# TODO: lint
 # TODO: OS changes. Set folder for wallpapers and time period
 
 
@@ -40,7 +42,7 @@ class Wallpaper(object):
         self.config_dir = self.get_config_dir()
         self.wallpaper_dir = self.get_wallpaper_dir()
         self.desktop_env = utils.get_desktop_env()
-        if len(self.get_new_images()) < 1:
+        if len(self.get_existing_images()) < self.gallery_size:
             self.dl_one_image()
 
     def get_config_dir(self, app_name=APP_NAME):
@@ -79,24 +81,27 @@ class Wallpaper(object):
         return logname
 
     def set_wallpaper(self, file_path):
-        ''' Set the current wallpaper for all platforms'''
+        '''
+        Entry point for the module. This call checks if new images need to be downloaded, and removes the oldest images
+
+        Set the current wallpaper for all platforms
+        '''
         desktop_env = self.desktop_env
-
-        if desktop_env == 'unknown':
-            print('Could not detect desktop environment')
-            return
-
         try:
-            utils.WMS[desktop_env](file_path)
+            if desktop_env == 'unknown':
+                print('Could not detect desktop environment, not setting wallpaper')
+            else:
+                utils.WMS[desktop_env](file_path)
+                self.save_used_image(file_path)
         except:
             print("Unexpected error setting wallpaper for {}:".format(desktop_env), sys.exc_info()[0])
 
-        self.save_used_image(file_path)
-
-        # verify we have more images for next time
-        new_images = self.get_new_images()
-        if len(new_images) < 10:
+        # verify we have more images for next time, remove if max
+        existing_images = len(self.get_existing_images())
+        if existing_images < self.gallery_size:
             self.download_images()
+        else:
+            self.remove_oldest(self.gallery_size * 0.1)  # remove 10% of the images if we have reached the max
 
     def download_images(self, path=''):
         """
@@ -106,7 +111,7 @@ class Wallpaper(object):
             path = self.wallpaper_dir
         return socwall.dl_random_page(path)
 
-    def get_new_images(self):
+    def get_existing_images(self):
         ''' Return a list of img options to choose from '''
         used_images = list()
         with open(self.logfile_name(), "r") as logf:
@@ -120,13 +125,13 @@ class Wallpaper(object):
 
     def get_random_wallpaper(self):
         ''' Returns a random image that has not been seen before '''
-        options = self.get_new_images()
+        options = self.get_existing_images()
         if len(options) > 0:
             return random.choice(options)
         else:
-            self.dl_one_image()
-            options = self.get_new_images()
-            return random.choice(options)
+            return self.dl_one_image()
+    #        options = self.get_existing_images()
+    #        return random.choice(options)
 
     def dl_one_image(self, path=''):
         ''' Get one image fast '''
@@ -141,7 +146,7 @@ class Wallpaper(object):
 
     def enough_provisioned(self):
         """ check if enough pics are there already """
-        return len(self.get_new_images()) > self.gallery_size
+        return len(self.get_existing_images()) > self.gallery_size
 
     def remove_oldest(self, num):
         """ remove a number of images """
@@ -155,9 +160,4 @@ class Wallpaper(object):
 
 if __name__ == '__main__':
     WM = Wallpaper()
-    # todo: consider if we have enough images
-    # if not WM.enough_provisioned():
-    #    WM.download_images()
     WM.set_wallpaper(WM.get_random_wallpaper())
-    NUM_NEWIMAGES = WM.download_images()
-    WM.remove_oldest(NUM_NEWIMAGES)

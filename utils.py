@@ -65,7 +65,7 @@ def set_wallpaper_feh(file_path):
     subprocess.Popen(args)
 
 
-def osx_set_wallpaper(file_path):
+def set_wallpaper_osx(file_path):
     """ osx all dirs """
     try:
         from appscript import app
@@ -201,12 +201,18 @@ def is_running(process):
     return False
 
 
-WMS = {"gnome": set_wallpaper_gnomefamily,
+def ignore_wallpaper():
+    ''' for unknown desktop environments, we simply ignore the call'''
+    pass
+
+
+WMS = {"unknown": ignore_wallpaper,
+       "gnome": set_wallpaper_gnomefamily,
        "gnome2": set_wallpaper_gnome2,
        "unity": set_wallpaper_gnomefamily,
        "cinnamon": set_wallpaper_gnomefamily,
        "awesome-gnome": set_wallpaper_gnomefamily,
-       "mac": osx_set_wallpaper,
+       "mac": set_wallpaper_osx,
        "mate": set_wallpaper_mate,
        "xfce4": set_wallpaper_xfce4,
        "windows": set_wallpaper_windows,
