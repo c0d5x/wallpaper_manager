@@ -7,9 +7,11 @@ import sys
 import glob
 import random
 import subprocess
-import socwall
-import utils
 
+import socwall  # pylint: disable-msg=W0401,W0403
+import utils    # pylint: disable-msg=W0401,W0403
+
+# pylint: disable-msg=C0325
 
 APP_NAME = "wallpaper_manager"
 VERBOSE = 1
@@ -157,5 +159,5 @@ if __name__ == '__main__':
     # if not WM.enough_provisioned():
     #    WM.download_images()
     WM.set_wallpaper(WM.get_random_wallpaper())
-    num_newimages = WM.download_images()
-    WM.remove_oldest(num_newimages)
+    NUM_NEWIMAGES = WM.download_images()
+    WM.remove_oldest(NUM_NEWIMAGES)
