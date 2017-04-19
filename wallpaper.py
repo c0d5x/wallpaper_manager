@@ -42,8 +42,10 @@ class Wallpaper(object):
         self.config_dir = self.get_config_dir()
         self.wallpaper_dir = self.get_wallpaper_dir()
         self.desktop_env = utils.get_desktop_env()
+        '''
         if len(self.get_existing_images()) < self.gallery_size:
             self.dl_one_image()
+        '''
 
     def get_config_dir(self, app_name=APP_NAME):
         ''' Use XDG standard config, THIS METHOD HAS TO BE CALLED AFTER get_home_dir '''
@@ -101,7 +103,7 @@ class Wallpaper(object):
         if existing_images < self.gallery_size:
             self.download_images()
         else:
-            self.remove_oldest(self.gallery_size * 0.1)  # remove 10% of the images if we have reached the max
+            self.remove_oldest(int(self.gallery_size * 0.1))  # remove 10% of the images if we have reached the max
 
     def download_images(self, path=''):
         """
