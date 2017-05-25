@@ -70,21 +70,16 @@ def set_wallpaper_osx(file_path):
     try:
         from appscript import app
         from appscript import mactypes
-        from appscript import its
+        from appscript.reference import CommandError
     except:
         raise
-    sys_events = app('System Events')
-    # desktops = sys_events.desktops.display_name.get()
-    # for desktop in desktops:
-    #    desk = sys_events.desktops[desktop]
-    #    desk.picture.set(mactypes.File(file_path))
-    desktops = sys_events.desktops.display_name.get()
-    for desktop in desktops:
-        desk = sys_events.desktops[its.display_name == desktop]
-        desk.picture.set(mactypes.File(file_path))
 
-    # another way can be:
-    # tell application "System Events" to set picture of every desktop to "~/Wallpapers/<path>"
+    try:
+        sys_events = app('System Events')
+        for desktop in sys_events.desktops.get():
+            desktop.picture.set(mactypes.File(file_path))
+    except CommandError as exception:
+        print(exception.errormessage)
 
 
 def set_wallpaper_kde(file_path):

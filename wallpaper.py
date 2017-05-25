@@ -33,6 +33,7 @@ class Wallpaper(object):
     config_dir = ""
     wallpaper_dir = ""
     desktop_env = ""
+    options = []
 
     # pool of images to keep locally
     # TODO: image rotation
@@ -82,6 +83,28 @@ class Wallpaper(object):
                 pass
         return logname
 
+    def set_wallpaper_random(self):
+        '''
+TODO: all
+        '''
+        desktop_env = self.desktop_env
+        self.remove_used()
+        try:
+            if desktop_env == 'unknown':
+                print('Could not detect desktop environment, not setting wallpaper')
+            else:
+                utils.WMS[desktop_env]()
+                self.save_used_image()
+        except:
+            print("Unexpected error setting wallpaper for {}:".format(desktop_env), sys.exc_info()[0])
+
+        # verify we have more images for next time, remove if max
+        existing_images = len(self.get_existing_images())
+        if existing_images < self.gallery_size:
+            self.download_images()
+        else:
+            self.remove_oldest(int(self.gallery_size * 0.1))  # remove 10% of the images if we have reached the max
+
     def set_wallpaper(self, file_path):
         '''
         Entry point for the module. This call checks if new images need to be downloaded, and removes the oldest images
@@ -89,6 +112,7 @@ class Wallpaper(object):
         Set the current wallpaper for all platforms
         '''
         desktop_env = self.desktop_env
+        self.remove_used()
         try:
             if desktop_env == 'unknown':
                 print('Could not detect desktop environment, not setting wallpaper')
@@ -127,7 +151,9 @@ class Wallpaper(object):
 
     def get_random_wallpaper(self):
         ''' Returns a random image that has not been seen before '''
-        options = self.get_existing_images()
+        options = self.options
+        if len(options) < 1:
+            options = self.get_existing_images()
         if len(options) > 0:
             return random.choice(options)
         else:
@@ -158,6 +184,21 @@ class Wallpaper(object):
         for filepath in [fn for fn in fnstr.split('\n') if fn != '']:
             os.remove(self.wallpaper_dir + "/" + filepath)
             print("Removed: {}".format(filepath))
+
+    def remove_used(self):
+        '''remove used images from disk and log'''
+        used_images = []
+        with open(self.logfile_name(), "r") as logf:
+            used_images = logf.readlines()
+            used_images = [l.strip('\n') for l in used_images]
+        for used_path in used_images:
+            try:
+                os.remove(used_path)
+            except:
+                pass
+                # I don't care if the file was not there
+        truncate_log = open(self.logfile_name(), "w")
+        truncate_log.close()
 
 
 if __name__ == '__main__':

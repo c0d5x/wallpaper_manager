@@ -4,3 +4,4 @@
 .ropeproject
 __pycache__
 *.pyc
+.idea
