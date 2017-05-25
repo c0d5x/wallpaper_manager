@@ -28,7 +28,7 @@ class Wallpaper(object):
     Set a nice and random wallpaper for your desktops
     """
 
-    gallery_size = 200
+    gallery_size = 100
     home_dir = ""
     config_dir = ""
     wallpaper_dir = ""
@@ -179,7 +179,7 @@ TODO: all
     def remove_oldest(self, num):
         """ remove a number of images """
         # TODO: what to do in windows ?
-        fnbytes = subprocess.check_output("/bin/ls -tr {}|head -n {}".format(self.wallpaper_dir, num), shell=True)
+        fnbytes = subprocess.check_output("/bin/ls -tr -S {}|head -n {}".format(self.wallpaper_dir, num), shell=True)
         fnstr = fnbytes.decode()
         for filepath in [fn for fn in fnstr.split('\n') if fn != '']:
             os.remove(self.wallpaper_dir + "/" + filepath)
