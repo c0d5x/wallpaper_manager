@@ -61,8 +61,11 @@ def set_wallpaper_windows(file_path):
 
 def set_wallpaper_feh(file_path):
     ''' not tested '''
-    args = ["feh", "--bg-center", file_path]
-    subprocess.Popen(args)
+    try:
+        args = ["feh", "--bg-center", file_path]
+        subprocess.Popen(args)
+    except:
+        print("Error running feh, please check `feh` is in your $PATH")
 
 
 def set_wallpaper_osx(file_path):
@@ -220,4 +223,5 @@ WMS = {"unknown": ignore_wallpaper,
        "afterstep": set_wallpaper_fluxbox,
        "lxde": set_wallpaper_lxde,
        "windowmaker": set_wallpaper_windowmaker,
-       "i3": set_wallpaper_feh}
+       "i3": set_wallpaper_gnomefamily}
+       # "i3": set_wallpaper_feh}
