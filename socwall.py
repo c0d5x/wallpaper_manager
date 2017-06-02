@@ -71,9 +71,13 @@ def dl_random_page(path):
     page_numbers = []
 
     # load page numbers that have been downloaded
-    with open(path + "/.page_numbers", "r") as logf:
-        # page_numbers = map(lambda s: s.strip(), logf.readlines())
-        page_numbers = [s.strip() for s in logf.readlines()]
+    try:
+        with open(path + "/.page_numbers", "r") as logf:
+            # page_numbers = map(lambda s: s.strip(), logf.readlines())
+            page_numbers = [s.strip() for s in logf.readlines()]
+    except:
+        print("No previous downloads found")
+
 
     # check if we have exausted half of the library
     if len(page_numbers) > (SOCWALL_MAX * 0.9):
