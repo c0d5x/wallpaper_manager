@@ -43,6 +43,8 @@ class Wallpaper(object):
         self.config_dir = self.get_config_dir()
         self.wallpaper_dir = self.get_wallpaper_dir()
         self.desktop_env = utils.get_desktop_env()
+        self.options = self.get_existing_images()
+
         '''
         if len(self.get_existing_images()) < self.gallery_size:
             self.dl_one_image()
@@ -105,6 +107,16 @@ TODO: all
         else:
             self.remove_oldest(int(self.gallery_size * 0.1))  # remove 10% of the images if we have reached the max
 
+    def gallery_maintenance(self):
+        self.remove_used()
+
+        # verify we have more images for next time, remove if max
+        existing_images = len(self.get_existing_images())
+        if existing_images < self.gallery_size:
+            self.download_images()
+        else:
+            self.remove_oldest(int(self.gallery_size * 0.1))  # remove 10% of the images if we have reached the max
+
     def set_wallpaper(self, file_path):
         '''
         Entry point for the module. This call checks if new images need to be downloaded, and removes the oldest images
@@ -112,7 +124,6 @@ TODO: all
         Set the current wallpaper for all platforms
         '''
         desktop_env = self.desktop_env
-        self.remove_used()
         try:
             if desktop_env == 'unknown':
                 print('Could not detect desktop environment, not setting wallpaper')
@@ -121,13 +132,6 @@ TODO: all
                 self.save_used_image(file_path)
         except:
             print("Unexpected error setting wallpaper for {}:".format(desktop_env), sys.exc_info()[0])
-
-        # verify we have more images for next time, remove if max
-        existing_images = len(self.get_existing_images())
-        if existing_images < self.gallery_size:
-            self.download_images()
-        else:
-            self.remove_oldest(int(self.gallery_size * 0.1))  # remove 10% of the images if we have reached the max
 
     def download_images(self, path=''):
         """
@@ -152,14 +156,11 @@ TODO: all
     def get_random_wallpaper(self):
         ''' Returns a random image that has not been seen before '''
         options = self.options
-        if len(options) < 1:
-            options = self.get_existing_images()
         if len(options) > 0:
             return random.choice(options)
         else:
+            self.gallery_maintenance()
             return self.dl_one_image()
-    #        options = self.get_existing_images()
-    #        return random.choice(options)
 
     def dl_one_image(self, path=''):
         ''' Get one image fast '''
