@@ -6,8 +6,9 @@ else:
     # Python 3
     import tkinter as tk
 
-root = tk.Tk()
-root.title("Sandwich")
-tk.Button(root, text="Make me a Sandwich").pack()
-tk.mainloop()
 
+if __name__ == '__main__':
+    root = tk.Tk()
+    root.title("Sandwich")
+    tk.Button(root, text="Make me a Sandwich").pack()
+    tk.mainloop()

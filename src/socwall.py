@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 ''' Parse and download wallpapers from socwall.com '''
 
-import os
 import shutil
 import random
 from concurrent import futures
@@ -10,7 +9,11 @@ from lxml import html
 
 SOCWALL_VERBOSE = True
 SOCWALL_DOMAIN = "http://www.socwall.com/"
-SOCWALL_MAX = 702
+
+# TODO: find the number of pages available
+SOCWALL_MAX = 709
+
+
 SOCWALL_EXECUTORS = 100
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36"
@@ -65,12 +68,11 @@ def dl_page(num, path):
     return counter
 
 
-def dl_random_page(path):
-    """ Download all images of a page at random """
-    pagen = random.randint(1, SOCWALL_MAX)
-    page_numbers = []
-
-    # load page numbers that have been downloaded
+def dl_random_images(path, n_images=10):
+    """
+    download that number of images randomly
+    """
+    # load previous pages
     try:
         with open(path + "/.page_numbers", "r") as logf:
             # page_numbers = map(lambda s: s.strip(), logf.readlines())
@@ -78,21 +80,15 @@ def dl_random_page(path):
     except:
         print("No previous downloads found")
 
-
-    # check if we have exausted half of the library
-    if len(page_numbers) > (SOCWALL_MAX * 0.9):
-        os.remove(path + "/.page_numbers")  # start over
-        page_numbers = []
-
-    while pagen in page_numbers:
+    while n_images > 0:
         pagen = random.randint(1, SOCWALL_MAX)
-
-    num_images = dl_page(pagen, path)
-
-    with open(path + "/.page_numbers", "a+") as logf:
-        logf.write(str(pagen) + "\n")
-
-    return num_images
+        while pagen in page_numbers:
+            pagen = random.randint(1, SOCWALL_MAX)
+        num_images = dl_page(pagen, path)
+        if num_images > 0:
+            n_images = n_images - num_images
+            with open(path + "/.page_numbers", "a+") as logf:
+                logf.write(str(pagen) + "\n")
 
 
 # if __name__ == "__main__":
