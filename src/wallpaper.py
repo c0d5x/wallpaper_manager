@@ -31,6 +31,7 @@ class Wallpaper(object):
 
     def __init__(self):
         self.conf = config.Config()
+        self.remove_used()
         self.options = self.get_existing_images()
 
         '''
@@ -40,10 +41,9 @@ class Wallpaper(object):
 
     def set_wallpaper_random(self):
         '''
-TODO: all
+        random
         '''
         desktop_env = self.conf.desktop_env
-        self.remove_used()
         try:
             if desktop_env == 'unknown':
                 print('Could not detect desktop environment, not setting wallpaper')
@@ -84,6 +84,7 @@ TODO: all
             if desktop_env == 'unknown':
                 print('Could not detect desktop environment, not setting wallpaper')
             else:
+                print("setting: ", file_path)
                 desktops.WMS[desktop_env](file_path)
                 self.save_used_image(file_path)
         except:
@@ -151,6 +152,7 @@ TODO: all
             used_images = [l.strip('\n') for l in used_images]
         for used_path in used_images:
             try:
+                print("removing: ", used_path)
                 os.remove(used_path)
             except:
                 pass
