@@ -146,6 +146,8 @@ def get_desktop_env_linux():
     elif os.environ.get('GNOME_DESKTOP_SESSION_ID'):
         if "deprecated" not in os.environ.get('GNOME_DESKTOP_SESSION_ID'):
             desktop_env = "gnome2"
+        else:
+            desktop_env = "gnome3"
     elif utils.is_running("xfce-mcs-manage"):
         desktop_env = "xfce4"
     elif utils.is_running("ksmserver"):
@@ -168,6 +170,8 @@ def get_desktop_env_linux_session(desktop_session):
     elif desktop_session.startswith("ubuntu"):
         desktop_env = "unity"
         # TODO: ubuntu will move to gnome3 soon
+    elif desktop_session.startswith("gnome3"):
+        desktop_env = "gnome3"
     elif desktop_session.startswith("lubuntu"):
         desktop_env = "lxde"
     elif desktop_session.startswith("kubuntu"):
@@ -185,6 +189,7 @@ def ignore_wallpaper(image_path=''):
 WMS = {"unknown": ignore_wallpaper,
        "gnome": set_wallpaper_gnomefamily,
        "gnome2": set_wallpaper_gnome2,
+       "gnome3": set_wallpaper_gnomefamily,
        "unity": set_wallpaper_gnomefamily,
        "cinnamon": set_wallpaper_gnomefamily,
        "awesome-gnome": set_wallpaper_gnomefamily,

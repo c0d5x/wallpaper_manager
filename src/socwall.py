@@ -72,6 +72,7 @@ def dl_random_images(path, n_images=10):
     """
     download that number of images randomly
     """
+    page_numbers = list()
     # load previous pages
     try:
         with open(path + "/.page_numbers", "r") as logf:
@@ -79,6 +80,7 @@ def dl_random_images(path, n_images=10):
             page_numbers = [s.strip() for s in logf.readlines()]
     except:
         print("No previous downloads found")
+
 
     while n_images > 0:
         pagen = random.randint(1, SOCWALL_MAX)
