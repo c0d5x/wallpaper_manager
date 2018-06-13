@@ -42,12 +42,18 @@ def set_wallpaper_mate(file_path):
 def set_wallpaper_xfce4(file_path):
     ''' not tested '''
     # From http://www.commandlinefu.com/commands/view/2055/change-wallpaper-for-xfce4-4.6.0
-    args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-path", "-s", file_path]
-    subprocess.Popen(args)
-    args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-style", "-s", "3"]
-    subprocess.Popen(args)
-    args = ["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/image-show", "-s", "true"]
-    subprocess.Popen(args)
+
+    # xfconf-query --channel xfce4-desktop --list|grep image-style|xargs -L1 dirname
+    monitor_paths = subprocess.check_output('xfconf-query --channel xfce4-desktop --list|grep last-image|xargs -L1 dirname', shell=True)
+    paths_array = monitor_paths.splitlines()
+
+    for path in paths_array:
+        str_path = path.decode("utf-8")
+        args = ["xfconf-query", "-c", "xfce4-desktop", "-p", str_path + "/last-image", "-s", file_path]
+        subprocess.Popen(args)
+        args = ["xfconf-query", "-c", "xfce4-desktop", "-p", str_path + "/image-style", "-s", "3"]
+        subprocess.Popen(args)
+
     args = ["xfdesktop", "--reload"]
     subprocess.Popen(args)
 
