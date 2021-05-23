@@ -1,4 +1,4 @@
-'''deal with desktops'''
+"""deal with desktops"""
 
 import os
 import sys
@@ -7,7 +7,7 @@ import utils
 
 
 def set_wallpaper_gnomefamily(file_path):
-    ''' gnome, unity, cinnamon, awesome-gnome '''
+    """ gnome, unity, cinnamon, awesome-gnome """
     uri = "'file://%s'" % file_path
     try:
         args = ["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri]
@@ -18,40 +18,79 @@ def set_wallpaper_gnomefamily(file_path):
 
 
 def set_wallpaper_gnome2(file_path):
-    ''' gnome2 uses gconftool-2 '''
+    """ gnome2 uses gconftool-2 """
     # From https://bugs.launchpad.net/variety/+bug/1033918
     try:
-        args = ["gconftool-2", "-t", "string", "--set", "/desktop/gnome/background/picture_filename", '"%s"' % file_path]
+        args = [
+            "gconftool-2",
+            "-t",
+            "string",
+            "--set",
+            "/desktop/gnome/background/picture_filename",
+            '"%s"' % file_path,
+        ]
         subprocess.Popen(args)
     except subprocess.CalledProcessError:
         set_wallpaper_gnomefamily(file_path)
 
 
 def set_wallpaper_mate(file_path):
-    ''' mate wm '''
+    """ mate wm """
     try:  # MATE >= 1.6
         # info from http://wiki.mate-desktop.org/docs:gsettings
-        args = ["gsettings", "set", "org.mate.background", "picture-filename", "'%s'" % file_path]
+        args = [
+            "gsettings",
+            "set",
+            "org.mate.background",
+            "picture-filename",
+            "'%s'" % file_path,
+        ]
         subprocess.Popen(args)
     except subprocess.CalledProcessError:
         # From https://bugs.launchpad.net/variety/+bug/1033918
-        args = ["mateconftool-2", "-t", "string", "--set", "/desktop/mate/background/picture_filename", '"%s"' % file_path]
+        args = [
+            "mateconftool-2",
+            "-t",
+            "string",
+            "--set",
+            "/desktop/mate/background/picture_filename",
+            '"%s"' % file_path,
+        ]
         subprocess.Popen(args)
 
 
 def set_wallpaper_xfce4(file_path):
-    ''' not tested '''
+    """ not tested """
     # From http://www.commandlinefu.com/commands/view/2055/change-wallpaper-for-xfce4-4.6.0
 
     # xfconf-query --channel xfce4-desktop --list|grep image-style|xargs -L1 dirname
-    monitor_paths = subprocess.check_output('xfconf-query --channel xfce4-desktop --list|grep last-image|xargs -L1 dirname', shell=True)
+    monitor_paths = subprocess.check_output(
+        "xfconf-query --channel xfce4-desktop --list|grep last-image|xargs -L1 dirname",
+        shell=True,
+    )
     paths_array = monitor_paths.splitlines()
 
     for path in paths_array:
         str_path = path.decode("utf-8")
-        args = ["xfconf-query", "-c", "xfce4-desktop", "-p", str_path + "/last-image", "-s", file_path]
+        args = [
+            "xfconf-query",
+            "-c",
+            "xfce4-desktop",
+            "-p",
+            str_path + "/last-image",
+            "-s",
+            file_path,
+        ]
         subprocess.Popen(args)
-        args = ["xfconf-query", "-c", "xfce4-desktop", "-p", str_path + "/image-style", "-s", "3"]
+        args = [
+            "xfconf-query",
+            "-c",
+            "xfce4-desktop",
+            "-p",
+            str_path + "/image-style",
+            "-s",
+            "3",
+        ]
         subprocess.Popen(args)
 
     args = ["xfdesktop", "--reload"]
@@ -59,14 +98,15 @@ def set_wallpaper_xfce4(file_path):
 
 
 def set_wallpaper_windows(file_path):
-    ''' not tested '''
+    """ not tested """
     # From http://stackoverflow.com/questions/1977694/change-desktop-background
     import ctypes
+
     ctypes.windll.user32.SystemParametersInfoA(20, 0, file_path, 0)
 
 
 def set_wallpaper_feh(file_path):
-    ''' not tested '''
+    """ not tested """
     try:
         args = ["feh", "--bg-center", file_path]
         subprocess.Popen(args)
@@ -84,7 +124,7 @@ def set_wallpaper_osx(file_path):
         raise
 
     try:
-        sys_events = app('System Events')
+        sys_events = app("System Events")
         for desktop in sys_events.desktops.get():
             desktop.picture.set(mactypes.File(file_path))
     except CommandError as exception:
@@ -129,7 +169,7 @@ def set_wallpaper_windowmaker(file_path):
 
 
 def get_desktop_env():
-    ''' Desktop environment for all platforms '''
+    """ Desktop environment for all platforms """
     desktop_env = "unknown"
 
     if sys.platform in ["win32", "cygwin"]:
@@ -142,15 +182,17 @@ def get_desktop_env():
 
 
 def get_desktop_env_linux():
-    '''penguin'''
-    desktop_env = 'unknown'
-    desktop_session = os.environ.get('DESKTOP_SESSION')
-    if desktop_session is not None:  # easier to match if we doesn't have to deal with caracter cases
+    """penguin"""
+    desktop_env = "unknown"
+    desktop_session = os.environ.get("DESKTOP_SESSION")
+    if (
+        desktop_session is not None
+    ):  # easier to match if we doesn't have to deal with caracter cases
         desktop_env = get_desktop_env_linux_session(desktop_session)
-    elif os.environ.get('KDE_FULL_SESSION') == 'true':
+    elif os.environ.get("KDE_FULL_SESSION") == "true":
         desktop_env = "kde"
-    elif os.environ.get('GNOME_DESKTOP_SESSION_ID'):
-        if "deprecated" not in os.environ.get('GNOME_DESKTOP_SESSION_ID'):
+    elif os.environ.get("GNOME_DESKTOP_SESSION_ID"):
+        if "deprecated" not in os.environ.get("GNOME_DESKTOP_SESSION_ID"):
             desktop_env = "gnome2"
         else:
             desktop_env = "gnome3"
@@ -162,14 +204,29 @@ def get_desktop_env_linux():
 
 
 def get_desktop_env_linux_session(desktop_session):
-    '''parse desktop session'''
-    desktop_env = 'unknown'
+    """parse desktop session"""
+    desktop_env = "unknown"
     desktop_session = desktop_session.lower()
     if desktop_session.startswith("i3"):
         desktop_env = "i3"
-    elif desktop_session in ["gnome", "unity", "cinnamon", "mate", "xfce4", "lxde", "fluxbox",
-                             "blackbox", "openbox", "icewm", "jwm", "afterstep", "trinity", "kde",
-                             "awesome", "awesome-gnome"]:
+    elif desktop_session in [
+        "gnome",
+        "unity",
+        "cinnamon",
+        "mate",
+        "xfce4",
+        "lxde",
+        "fluxbox",
+        "blackbox",
+        "openbox",
+        "icewm",
+        "jwm",
+        "afterstep",
+        "trinity",
+        "kde",
+        "awesome",
+        "awesome-gnome",
+    ]:
         desktop_env = desktop_session
     elif "xfce" in desktop_session or desktop_session.startswith("xubuntu"):
         desktop_env = "xfce4"
@@ -187,29 +244,31 @@ def get_desktop_env_linux_session(desktop_session):
     return desktop_env
 
 
-def ignore_wallpaper(image_path=''):
-    ''' for unknown desktop environments, we simply ignore the call'''
+def ignore_wallpaper(image_path=""):
+    """ for unknown desktop environments, we simply ignore the call"""
     pass
 
 
-WMS = {"unknown": ignore_wallpaper,
-       "gnome": set_wallpaper_gnomefamily,
-       "gnome2": set_wallpaper_gnome2,
-       "gnome3": set_wallpaper_gnomefamily,
-       "unity": set_wallpaper_gnomefamily,
-       "cinnamon": set_wallpaper_gnomefamily,
-       "awesome-gnome": set_wallpaper_gnomefamily,
-       "mac": set_wallpaper_osx,
-       "mate": set_wallpaper_mate,
-       "xfce4": set_wallpaper_xfce4,
-       "windows": set_wallpaper_windows,
-       "feh": set_wallpaper_feh,
-       "kde3": set_wallpaper_kde,
-       "trinity": set_wallpaper_kde,
-       "blackbox": set_wallpaper_blackbox,
-       "fluxbox": set_wallpaper_fluxbox,
-       "jwm": set_wallpaper_fluxbox,
-       "afterstep": set_wallpaper_fluxbox,
-       "lxde": set_wallpaper_lxde,
-       "windowmaker": set_wallpaper_windowmaker,
-       "i3": set_wallpaper_gnomefamily}
+WMS = {
+    "unknown": ignore_wallpaper,
+    "gnome": set_wallpaper_gnomefamily,
+    "gnome2": set_wallpaper_gnome2,
+    "gnome3": set_wallpaper_gnomefamily,
+    "unity": set_wallpaper_gnomefamily,
+    "cinnamon": set_wallpaper_gnomefamily,
+    "awesome-gnome": set_wallpaper_gnomefamily,
+    "mac": set_wallpaper_osx,
+    "mate": set_wallpaper_mate,
+    "xfce4": set_wallpaper_xfce4,
+    "windows": set_wallpaper_windows,
+    "feh": set_wallpaper_feh,
+    "kde3": set_wallpaper_kde,
+    "trinity": set_wallpaper_kde,
+    "blackbox": set_wallpaper_blackbox,
+    "fluxbox": set_wallpaper_fluxbox,
+    "jwm": set_wallpaper_fluxbox,
+    "afterstep": set_wallpaper_fluxbox,
+    "lxde": set_wallpaper_lxde,
+    "windowmaker": set_wallpaper_windowmaker,
+    "i3": set_wallpaper_gnomefamily,
+}
