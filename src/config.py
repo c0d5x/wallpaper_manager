@@ -12,6 +12,14 @@ DEFAULT_GALLERY_SIZE = 20
 APP_NAME = "wallpaper"
 
 
+def get_default_home_dir():
+    """Home dir for all platforms"""
+    home_dir = os.getenv("USERPROFILE") or os.getenv("HOME")
+    if not home_dir:
+        raise KeyError("Neither HOME or USERPROFILE environment variables set.")
+    return os.path.normpath(home_dir)
+
+
 class Config:
     """deal with configuration"""
 
@@ -24,23 +32,15 @@ class Config:
     logfile_name = ""
 
     def __init__(self):
-        self.home_dir = self.get_home_dir()
+        self.home_dir = get_default_home_dir()
         self.config_dir = self.get_config_dir()
         self.wallpaper_dir = self.get_wallpaper_dir()
         self.wallpaper_static_dir = self.get_wallpaper_static_dir()
         self.desktop_env = desktops.get_desktop_env()
         self.logfile_name = self.get_logfile_name()
 
-    def get_home_dir(self):
-        """ Home dir for all platforms """
-        home_dir = os.getenv("USERPROFILE") or os.getenv("HOME")
-        if home_dir is not None:
-            return os.path.normpath(home_dir)
-        else:
-            raise KeyError("Neither HOME or USERPROFILE environment variables set.")
-
     def get_config_dir(self, app_name=APP_NAME):
-        """ Use XDG standard config, THIS METHOD HAS TO BE CALLED AFTER get_home_dir """
+        """Use XDG standard config, THIS METHOD HAS TO BE CALLED AFTER get_home_dir"""
         if "XDG_CONFIG_HOME" in os.environ:
             confighome = os.environ["XDG_CONFIG_HOME"]
         elif "APPDATA" in os.environ:  # On Windows
@@ -56,26 +56,26 @@ class Config:
         return configdir
 
     def get_wallpaper_dir(self):
-        """ Images are saved in a visible folder for the user """
+        """Images are saved in a visible folder for the user"""
         wallpaper_dir = os.path.join(self.home_dir, "Wallpapers")
         if not os.path.exists(wallpaper_dir):
             os.mkdir(wallpaper_dir)
         return wallpaper_dir
 
     def get_wallpaper_static_dir(self):
-        """ Images are saved in a visible folder for the user AND NEVER DELETED """
+        """Images are saved in a visible folder for the user AND NEVER DELETED"""
         wallpaper_dir = os.path.join(self.home_dir, "Static-Wallpapers")
         if not os.path.exists(wallpaper_dir):
             os.mkdir(wallpaper_dir)
         return wallpaper_dir
 
     def get_logfile_name(self):
-        """ Name of log file """
+        """Name of log file"""
         ldir = self.config_dir
         if not os.path.exists(ldir):
             os.mkdir(ldir)
         logname = ldir + "/used_images.log"
         if not os.path.exists(logname):
-            with open(logname, "a+"):
+            with open(logname, "a+", encoding="utf-8"):
                 pass
         return logname
